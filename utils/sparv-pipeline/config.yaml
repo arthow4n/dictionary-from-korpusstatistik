@@ -1,0 +1,25 @@
+metadata:
+  id: tmp
+  name:
+    eng: tmp
+    swe: tmp
+  language: swe
+  description:
+    eng: tmp
+    swe: tmp
+import:
+  source_dir: .
+  importer: text_import:parse
+  document_annotation: text
+classes:
+  token:msd: <token>:hunpos.msd
+export:
+  default:
+    - csv_export:csv
+  annotations:
+    - <token>:saldo.complemgram
+    - <token>:saldo.compwf
+    - <token>:saldo.baseform2
+preload:
+  - saldo:annotate
+  - saldo:compound
