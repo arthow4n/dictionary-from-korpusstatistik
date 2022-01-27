@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node --max-old-space-size=32000 --loader ts-node/esm main.ts build",
-    "folkets": "node --max-old-space-size=32000 --loader ts-node/esm main.ts folkets",
+    "folkets-compound": "node --max-old-space-size=32000 --loader ts-node/esm main.ts folkets-compound",
+    "folkets-sven": "node --max-old-space-size=32000 --loader ts-node/esm main.ts folkets-sven",
     "clean": "rimraf build",
     "sparv-pipeline": "docker run -it docker.io/arthow4n/sparv-pipeline:latest"
   },

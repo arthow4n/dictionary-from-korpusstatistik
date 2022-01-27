@@ -8,6 +8,7 @@ import consoleStamp from "console-stamp";
 import { getDictionaryTemplate } from "./utils/dictionary.js";
 import { buildDictionaryFromSparvCompoundOutputCsv } from "./utils/buildDictionaryFromSparvCompoundOutputCsv.js";
 import { transformFolketsLexiconToCompoundLookup } from "./utils/transformFolketsLexiconToCompoundLookup.js";
+import { transformFolketsLexiconToEnglishTranslationLookup } from "./utils/transformFolketsLexiconToEnglishTranslationLookup.js";
 consoleStamp(console);
 
 const program = new Command();
@@ -122,10 +123,31 @@ export const getEntries = () => (${entriesJson});`;
     console.timeEnd(timertag);
   });
 
+const getFolketsMetaCommonFields = () => ({
+  buildTimestamp: new Date().toISOString(),
+  license: {
+    name: "CC BY-SA 2.5",
+    link: "https://creativecommons.org/licenses/by-sa/2.5/",
+  },
+  dataSources: [
+    {
+      name: "Folkets lexikon",
+      link: "https://folkets-lexikon.csc.kth.se/folkets/om.html",
+      license: {
+        name: "CC BY-SA 2.5",
+        link: "https://creativecommons.org/licenses/by-sa/2.5/",
+      },
+      fileNames: [
+        "https://folkets-lexikon.csc.kth.se/folkets/folkets_sv_en_public.xml",
+      ],
+    },
+  ],
+});
+
 program
-  .command("folkets <path-to-xml>")
+  .command("folkets-compound <path-to-xml>")
   .description(
-    "Build dictionary from a Folkets Lexicon XML file. https://folkets-lexikon.csc.kth.se/folkets/folkets_sv_en_public.xml"
+    "Build compound guesser dictionary from a Folkets Lexicon XML file. https://folkets-lexikon.csc.kth.se/folkets/folkets_sv_en_public.xml"
   )
   .action(async (source: string) => {
     const timertag = "build";
@@ -149,24 +171,7 @@ export const getCompoundParts = () => (${setJson});`;
 
     const jsMetaModule = `export const getInfo = () => (${JSON.stringify(
       {
-        buildTimestamp: new Date().toISOString(),
-        license: {
-          name: "CC BY-SA 2.5",
-          link: "https://creativecommons.org/licenses/by-sa/2.5/",
-        },
-        dataSources: [
-          {
-            name: "Folkets lexikon",
-            link: "https://folkets-lexikon.csc.kth.se/folkets/om.html",
-            license: {
-              name: "CC BY-SA 2.5",
-              link: "https://creativecommons.org/licenses/by-sa/2.5/",
-            },
-            fileNames: [
-              "https://folkets-lexikon.csc.kth.se/folkets/folkets_sv_en_public.xml",
-            ],
-          },
-        ],
+        ...getFolketsMetaCommonFields(),
         totalEntriesCount: set.size,
         chunks: [
           {
@@ -181,6 +186,46 @@ export const getCompoundParts = () => (${setJson});`;
     )});`;
 
     await outputFile(join("build", "folkets-compound.meta.mjs"), jsMetaModule);
+    console.timeEnd(timertag);
+  });
+
+program
+  .command("folkets-sven <path-to-xml>")
+  .description(
+    "Build Swedish->English dictionary from a Folkets Lexicon XML file. https://folkets-lexikon.csc.kth.se/folkets/folkets_sv_en_public.xml"
+  )
+  .action(async (source: string) => {
+    const timertag = "build";
+    console.time(timertag);
+    const file = await readFile(source, "utf-8");
+    const record = transformFolketsLexiconToEnglishTranslationLookup(file);
+    const recordJson = JSON.stringify(record);
+    const version = createHash("sha256").update(recordJson).digest("hex");
+    const code = `export const version = ${JSON.stringify(version)};
+
+export const getTranslationLookUp = () => (${recordJson});`;
+
+    const chunkName = "folkets-sven.chunk.001.mjs";
+    await outputFile(join("build", chunkName), code);
+
+    const entriesCount = Object.keys(record).length;
+    const jsMetaModule = `export const getInfo = () => (${JSON.stringify(
+      {
+        ...getFolketsMetaCommonFields(),
+        totalEntriesCount: entriesCount,
+        chunks: [
+          {
+            name: chunkName,
+            version,
+            entriesCount,
+          },
+        ],
+      },
+      null,
+      2
+    )});`;
+
+    await outputFile(join("build", "folkets-sven.meta.mjs"), jsMetaModule);
     console.timeEnd(timertag);
   });
 
