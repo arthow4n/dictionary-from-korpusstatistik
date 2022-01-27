@@ -14,7 +14,7 @@ consoleStamp(console);
 const program = new Command();
 
 program
-  .command("build <source>")
+  .command("korpusstatistik <source>")
   .description(
     "Build dictionary from a folder containing CSV files from https://spraakbanken.gu.se/verktyg/korp/korpusstatistik"
   )
